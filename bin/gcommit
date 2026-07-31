@@ -1,0 +1,56 @@
+#!/usr/bin/env zsh
+
+# 1. 檢查是否有暫存檔案
+if git diff --cached --quiet; then
+    echo "❌ 錯誤：沒有已暫存 (staged) 的變更，請先執行 git add ."
+    exit 1
+fi
+
+# 2. 選擇類型
+echo "請選擇類型 (預設 auto):"
+echo "feat: 新功能 | fix: 修復 | docs: 文件 | style: 格式 | refactor: 重構"
+echo "test: 測試 | chore: 雜項 | build: 編譯 | ci: 流程 | perf: 效能 | revert: 撤銷"
+echo -n "Type > "
+read commit_type
+[ -z "$commit_type" ] && commit_type="auto"
+
+echo "⏳ 正在生成詳細 Commit Message..."
+
+# 3. 組合要給 genai 的提示詞
+prompt="你是一位專業的開發者。請根據輸入的 git diff 內容，用繁體中文撰寫一個結構嚴謹的 commit message。
+格式要求如下：
+1. 第一行：<type>(<scope>): <簡短標題> (使用 Conventional Commits，類型為 $commit_type)
+2. 第二行：空行
+3. 第三行：一段簡短的文字，描述本次變更的核心目的或背景。
+4. 第四行：空行
+5. 第五行起：標題為「主要變更：」，接著以條列式 (- ) 說明具體的修改內容。
+
+注意：
+- 只要輸出 message 本身，不要有 Markdown 代碼塊標籤或多餘解釋。
+- 如果類型是 auto，請根據 diff 自行判斷最合適的 type。"
+
+# 4. 直接利用管線將 git diff 丟給通用的 genai CLI
+msg=$(git diff --cached | genai "$prompt")
+
+if [ -z "$msg" ]; then
+    echo "❌ 錯誤：無法取得 Commit Message"
+    exit 1
+fi
+
+# 5. 顯示預覽
+echo -e "\n📝 AI 生成內容預覽："
+echo "--------------------------------------------------------"
+echo -e "\033[32m$msg\033[0m"
+echo "--------------------------------------------------------"
+
+# 6. 使用 Zsh 的 vared 編輯 (支援多行編輯)
+echo "💡 提示：直接按 Enter 確認提交；若要修改，請直接編輯下方文字。"
+final_msg="$msg"
+vared -p "Edit > " final_msg
+
+# 7. 最終確認並提交
+if [ -n "$final_msg" ]; then
+    git commit -m "$final_msg"
+else
+    echo "🚫 內容為空，已取消提交。"
+fi

@@ -1,0 +1,56 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# dependencies = [
+#     "google-genai",
+# ]
+# ///
+
+import os
+import sys
+from google import genai
+
+
+def main():
+    # 1. 取得 API Key
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        print("❌ 錯誤：未設定 GEMINI_API_KEY 環境變數", file=sys.stderr)
+        sys.exit(1)
+
+    # 2. 檢查是否有來自 Pipe (stdin) 的輸入
+    stdin_content = ""
+    if not sys.stdin.isatty():
+        stdin_content = sys.stdin.read().strip()
+
+    # 3. 取得命令列參數 prompt
+    args_prompt = " ".join(sys.argv[1:]).strip()
+
+    # 4. 組合 Prompt
+    prompts = []
+    if args_prompt:
+        prompts.append(args_prompt)
+    if stdin_content:
+        prompts.append(stdin_content)
+
+    if not prompts:
+        print('用法: genai "你的問題" 或 cat file.txt | genai "指令"', file=sys.stderr)
+        sys.exit(1)
+
+    full_prompt = "\n\n".join(prompts)
+
+    # 5. 呼叫 Gemini API
+    try:
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model="gemini-3.5-flash-lite",
+            contents=full_prompt,
+        )
+        if response.text:
+            print(response.text.strip())
+    except Exception as e:
+        print(f"❌ Gemini API 呼叫失敗: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
