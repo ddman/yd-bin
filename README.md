@@ -62,17 +62,22 @@
 git clone https://github.com/your-username/yd-bin.git ~/projects/yd-bin
 ```
 
-### 2. 設定環境變數
+### 2. 設定專案設定檔
 
-編輯您的 Shell 設定檔（例如 `~/.zshrc` 或 `~/.bashrc`）：
+在專案根目錄建立 `.env`（此檔案不應提交至 Git）：
 
 ```bash
-# 1. 設定 Gemini API Key (可至 Google AI Studio 免費申請)
-export GEMINI_API_KEY="your_gemini_api_key_here"
+GEMINI_API_KEY=your_gemini_api_key_here
+```
 
-# 2. 將 yd-bin/bin 目錄加入系統 PATH
+並將 `bin` 目錄加入 Shell 的 PATH：
+
+```bash
+# macOS / Zsh：加入 ~/.zshrc
 export PATH="$HOME/projects/yd-bin/bin:$PATH"
 ```
+
+`genai` 會從本專案的 `.env` 讀取金鑰，只在該程序內使用，不會修改整個 Shell 環境。
 
 ### 3. 載入最新設定與賦予執行權限
 

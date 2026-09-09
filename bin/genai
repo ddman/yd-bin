@@ -2,17 +2,20 @@
 # /// script
 # dependencies = [
 #     "google-genai",
+#     "python-dotenv",
 # ]
 # ///
 
-import os
 import sys
+from pathlib import Path
+from dotenv import dotenv_values
 from google import genai
 
 
 def main():
     # 1. 取得 API Key
-    api_key = os.environ.get("GEMINI_API_KEY")
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    api_key = dotenv_values(env_path).get("GEMINI_API_KEY")
     if not api_key:
         print("❌ 錯誤：未設定 GEMINI_API_KEY 環境變數", file=sys.stderr)
         sys.exit(1)
